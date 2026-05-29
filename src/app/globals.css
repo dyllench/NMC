@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #102033;
+
+  --novamedix-blue: #0b5fff;
+  --novamedix-blue-dark: #0846bd;
+  --novamedix-teal: #10b8b3;
+  --novamedix-teal-dark: #0b807d;
+  --novamedix-whatsapp-green: #25d366;
+  --novamedix-light-gray: #f4f7fb;
+  --novamedix-border: #dce6f2;
+  --novamedix-white: #ffffff;
+  --novamedix-navy: #061957;
+
+  --radius-card: 1rem;
+  --shadow-soft: 0 16px 40px rgb(16 32 51 / 0.08);
+  --shadow-card: 0 10px 28px rgb(16 32 51 / 0.10);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-novamedix-blue: var(--novamedix-blue);
+  --color-novamedix-blue-dark: var(--novamedix-blue-dark);
+  --color-novamedix-teal: var(--novamedix-teal);
+  --color-novamedix-teal-dark: var(--novamedix-teal-dark);
+  --color-novamedix-whatsapp-green: var(--novamedix-whatsapp-green);
+  --color-novamedix-light-gray: var(--novamedix-light-gray);
+  --color-novamedix-border: var(--novamedix-border);
+  --color-novamedix-white: var(--novamedix-white);
+  --color-navy: var(--novamedix-navy);
+  --radius-card: var(--radius-card);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-card: var(--shadow-card);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
