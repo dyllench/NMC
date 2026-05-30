@@ -1,5 +1,5 @@
 export type Product = {
-  id: string;
+  id: number | string;
   slug: string;
   category: string;
   title: string;
@@ -19,7 +19,7 @@ export type Product = {
 };
 
 export type ProductRow = {
-  id: string;
+  id: number;
   slug: string;
   category: string;
   title: string;
