@@ -6,12 +6,14 @@ import { Header } from "@/components/Header";
 import { Icon } from "@/components/Icon";
 import { LocalizedText } from "@/components/LocalizedText";
 import { StickyWhatsAppButton } from "@/components/StickyWhatsAppButton";
-import { productCategories, productListImages } from "@/lib/static-data";
+import { getPublishedProducts } from "@/lib/products";
 import { getWhatsAppLink } from "@/lib/whatsapp";
 
 const tabs = ["Head & Face", "Torso", "Lower Limb", "Gloves", "Foot Garments"];
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const products = await getPublishedProducts();
+
   return (
     <>
       <Header titleKey="products" />
@@ -36,20 +38,20 @@ export default function ProductsPage() {
         </section>
 
         <section className="mx-auto mt-5 grid max-w-screen-xl gap-3">
-          {productCategories.map((category, index) => (
-            <article key={category.name} className="grid grid-cols-[34%_1fr] gap-5 rounded-card border border-novamedix-border bg-white p-0 shadow-soft md:grid-cols-[260px_1fr_280px] md:items-center">
+          {products.map((product) => (
+            <article key={product.slug} className="grid grid-cols-[34%_1fr] gap-5 rounded-card border border-novamedix-border bg-white p-0 shadow-soft md:grid-cols-[260px_1fr_280px] md:items-center">
               <div className="relative min-h-44 overflow-hidden rounded-l-card bg-novamedix-light-gray md:min-h-44">
-                <Image src={productListImages[index]} alt="" fill className="object-cover" />
+                <Image src={product.coverImageUrl} alt={product.title} fill className="object-cover" unoptimized={isRemoteImage(product.coverImageUrl)} />
               </div>
               <div className="py-6 pr-3">
-                <h2 className="text-3xl font-bold text-navy">{category.name}</h2>
-                <p className="mt-2 max-w-sm text-lg leading-7 text-slate-600">{category.description}</p>
-                <Link href="/products/lower-limb-compression-garment" className="mt-3 inline-flex h-10 items-center gap-3 rounded-lg bg-novamedix-blue px-5 text-lg font-bold text-white shadow-soft">
+                <h2 className="text-3xl font-bold text-navy">{getDisplayTitle(product.title)}</h2>
+                <p className="mt-2 max-w-sm text-lg leading-7 text-slate-600">{product.shortDescription}</p>
+                <Link href={`/products/${product.slug}`} className="mt-3 inline-flex h-10 items-center gap-3 rounded-lg bg-novamedix-blue px-5 text-lg font-bold text-white shadow-soft">
                   <LocalizedText k="viewDetails">View Details</LocalizedText> <Icon name="arrow" className="h-5 w-5" />
                 </Link>
               </div>
               <div className="col-span-2 grid gap-2 px-5 pb-5 md:col-span-1 md:px-0 md:pb-0 md:pr-8">
-                {["Ready Style", "Custom Available", "OEM"].map((label, badgeIndex) => (
+                {product.tags.slice(0, 3).map((label, badgeIndex) => (
                   <div key={label} className="flex h-9 items-center gap-3 rounded-full bg-[#f1f5fb] px-5 text-base font-bold text-novamedix-blue">
                     <Icon name={badgeIndex === 0 ? "shirt" : badgeIndex === 1 ? "ruler" : "shield"} className="h-5 w-5" />
                     {label}
@@ -86,4 +88,12 @@ export default function ProductsPage() {
       <StickyWhatsAppButton />
     </>
   );
+}
+
+function getDisplayTitle(title: string) {
+  return title.replace(" Compression Garment", "").replace("Compression Gloves", "Gloves").replace("Foot Compression Garment", "Foot Garments");
+}
+
+function isRemoteImage(src: string) {
+  return src.startsWith("http://") || src.startsWith("https://");
 }

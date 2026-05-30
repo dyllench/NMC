@@ -5,34 +5,40 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { ProductFeatureCard } from "@/components/ProductFeatureCard";
 import { ProductGallery } from "@/components/ProductGallery";
 import { StickyWhatsAppButton } from "@/components/StickyWhatsAppButton";
+import { getProductBySlug } from "@/lib/products";
 import { getProductWhatsAppMessage, getWhatsAppLink } from "@/lib/whatsapp";
 
-const productBadges = [
-  ["factory", "Factory Direct"],
-  ["ruler", "Custom Available"],
-  ["shield", "OEM Support"],
-  ["globe", "Global Shipping"],
-];
+type ProductDetailPageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
 
-const productTitle = "Lower Limb Compression Garment";
-const productWhatsAppMessage = getProductWhatsAppMessage(productTitle);
+export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  const productWhatsAppMessage = getProductWhatsAppMessage(product.title);
+  const badges = product.tags.length > 0 ? product.tags : ["Factory Direct", "Custom Available", "OEM Support", "Global Shipping"];
 
-export default function LowerLimbCompressionGarmentPage() {
   return (
     <>
-      <Header detail title={productTitle} />
+      <Header detail title={product.title} />
       <main className="mx-auto w-full max-w-screen-md bg-white pb-6">
-        <ProductGallery />
+        <ProductGallery
+          coverImageUrl={product.coverImageUrl}
+          galleryImageUrls={product.galleryImageUrls}
+          title={product.title}
+        />
 
         <section className="px-7 pt-5 text-center">
-          <h1 className="text-3xl font-bold text-navy">Lower Limb Compression Garment</h1>
+          <h1 className="text-3xl font-bold text-navy">{product.title}</h1>
           <p className="mx-auto mt-1 max-w-lg text-base leading-6 text-slate-600">
-            Factory direct compression garment solution with ready styles, custom sizing and OEM support.
+            {product.subtitle}
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {productBadges.map(([icon, label]) => (
+            {badges.slice(0, 4).map((label, index) => (
               <div key={label} className="flex h-8 items-center justify-center gap-2 rounded-full bg-[#f1f5fb] text-sm font-bold text-novamedix-blue">
-                <Icon name={icon} className="h-4 w-4" /> {label}
+                <Icon name={getBadgeIcon(index)} className="h-4 w-4" /> {label}
               </div>
             ))}
           </div>
@@ -52,8 +58,7 @@ export default function LowerLimbCompressionGarmentPage() {
             <div>
               <h2 className="text-xl font-bold text-navy"><LocalizedText k="productOverview">Product Overview</LocalizedText></h2>
               <p className="mt-1 text-sm leading-5 text-slate-600">
-                This product is designed for buyers looking for lower-limb compression garment solutions.
-                Ready styles and simple custom-made options are available.
+                {product.overview}
               </p>
             </div>
           </div>
@@ -62,20 +67,16 @@ export default function LowerLimbCompressionGarmentPage() {
         <section className="mx-7 mt-3 rounded-card border border-novamedix-border bg-white p-4 shadow-soft">
           <h2 className="text-xl font-bold text-navy"><LocalizedText k="keyFeatures">Key Features</LocalizedText></h2>
           <div className="mt-3 grid grid-cols-5 gap-3">
-            {[
-              ["wave", "Comfortable elastic fabric"],
-              ["ruler", "Smooth stitching"],
-              ["ruler", "Custom sizing support"],
-              ["shirt", "Ready styles available"],
-              ["shield", "OEM / private label support"],
-            ].map(([icon, title]) => <ProductFeatureCard key={title} icon={icon} title={title} />)}
+            {product.features.slice(0, 5).map((title, index) => (
+              <ProductFeatureCard key={title} icon={getFeatureIcon(index)} title={title} />
+            ))}
           </div>
         </section>
 
         <section className="mx-7 mt-3 rounded-card border border-novamedix-border bg-white p-4 shadow-soft">
           <h2 className="text-xl font-bold text-navy"><LocalizedText k="applications">Applications</LocalizedText></h2>
           <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {["Recovery support", "Compression use", "Clinic supply", "Distributor / wholesale", "OEM projects"].map((label) => (
+            {product.applications.slice(0, 5).map((label) => (
               <div key={label} className="flex items-center justify-center gap-2 rounded-full text-center text-sm text-navy">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-novamedix-teal text-novamedix-teal"><Icon name="check" className="h-5 w-5" /></span>
                 {label}
@@ -87,14 +88,10 @@ export default function LowerLimbCompressionGarmentPage() {
         <section className="mx-7 mt-3 rounded-card border border-novamedix-border bg-white p-4 text-center shadow-soft">
           <h2 className="text-left text-xl font-bold text-navy"><LocalizedText k="simpleCustomOrder">Simple Custom Order</LocalizedText></h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            {[
-              ["1", "shirt", "Choose product type"],
-              ["2", "ruler", "Send basic measurements"],
-              ["3", "shield", "Confirm and produce"],
-            ].map(([num, icon, label]) => (
-              <div key={num} className="relative rounded-lg border border-novamedix-border bg-white p-4 shadow-soft">
-                <span className="absolute left-4 top-2 rounded-full bg-novamedix-teal px-3 text-sm font-bold text-white">{num}</span>
-                <Icon name={icon} className="mx-auto h-11 w-11 text-novamedix-blue" />
+            {product.customSteps.slice(0, 3).map((label, index) => (
+              <div key={label} className="relative rounded-lg border border-novamedix-border bg-white p-4 shadow-soft">
+                <span className="absolute left-4 top-2 rounded-full bg-novamedix-teal px-3 text-sm font-bold text-white">{index + 1}</span>
+                <Icon name={getStepIcon(index)} className="mx-auto h-11 w-11 text-novamedix-blue" />
                 <p className="mt-2 text-sm font-semibold leading-tight text-navy">{label}</p>
               </div>
             ))}
@@ -108,9 +105,9 @@ export default function LowerLimbCompressionGarmentPage() {
         <section className="mx-7 mt-3 rounded-card border border-novamedix-border bg-white p-4 shadow-soft">
           <h2 className="text-xl font-bold text-navy"><LocalizedText k="orderInformation">Order Information</LocalizedText></h2>
           <div className="mt-2 divide-y divide-novamedix-border rounded-lg bg-white text-slate-700">
-            {["Ready styles available", "Custom-made support", "OEM / private label available", "Lead time depends on quantity"].map((item, index) => (
+            {product.orderInfo.slice(0, 4).map((item, index) => (
               <div key={item} className="flex h-10 items-center justify-between px-2 text-base">
-                <span className="flex items-center gap-3"><Icon name={index === 0 ? "shirt" : index === 1 ? "ruler" : index === 2 ? "shield" : "info"} className="h-5 w-5 text-novamedix-blue" />{item}</span>
+                <span className="flex items-center gap-3"><Icon name={getOrderInfoIcon(index)} className="h-5 w-5 text-novamedix-blue" />{item}</span>
                 <span className="text-slate-400">›</span>
               </div>
             ))}
@@ -133,7 +130,23 @@ export default function LowerLimbCompressionGarmentPage() {
         </section>
       </main>
       <Footer />
-      <StickyWhatsAppButton secondary productTitle={productTitle} />
+      <StickyWhatsAppButton secondary productTitle={product.title} />
     </>
   );
+}
+
+function getBadgeIcon(index: number) {
+  return ["factory", "ruler", "shield", "globe"][index] || "tag";
+}
+
+function getFeatureIcon(index: number) {
+  return ["wave", "ruler", "ruler", "shirt", "shield"][index] || "check";
+}
+
+function getStepIcon(index: number) {
+  return ["shirt", "ruler", "shield"][index] || "check";
+}
+
+function getOrderInfoIcon(index: number) {
+  return ["shirt", "ruler", "shield", "info"][index] || "info";
 }
