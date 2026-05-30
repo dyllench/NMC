@@ -1,5 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import type { ProductRow } from "@/types/product";
+import type { ProductFormState } from "@/lib/admin-products";
 
 const categoryOptions = [
   ["head-face", "Head & Face"],
@@ -10,7 +15,7 @@ const categoryOptions = [
 ];
 
 type ProductFormProps = {
-  action: (formData: FormData) => Promise<void>;
+  action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   error?: string;
   notice?: string;
   product?: ProductRow | null;
@@ -18,11 +23,14 @@ type ProductFormProps = {
 };
 
 export function ProductForm({ action, error, notice, product, submitLabel }: ProductFormProps) {
+  const [state, formAction] = useActionState(action, { error: error || "" });
+  const formError = state.error || error;
+
   return (
-    <form action={action} className="grid gap-5 rounded-card bg-white p-5 shadow-soft">
-      {error ? (
+    <form action={formAction} className="grid gap-5 rounded-card bg-white p-5 shadow-soft">
+      {formError ? (
         <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700">
-          {error}
+          {formError}
         </div>
       ) : null}
       {notice ? (
@@ -72,14 +80,26 @@ export function ProductForm({ action, error, notice, product, submitLabel }: Pro
       </div>
 
       <div className="flex flex-wrap gap-3 border-t border-novamedix-border pt-5">
-        <button className="h-11 rounded-lg bg-novamedix-blue px-6 text-base font-bold text-white" type="submit">
-          {submitLabel}
-        </button>
+        <SubmitButton label={submitLabel} />
         <Link href="/admin/products" className="flex h-11 items-center rounded-lg border border-novamedix-border px-6 text-base font-bold text-navy">
           Cancel
         </Link>
       </div>
     </form>
+  );
+}
+
+function SubmitButton({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      className="h-11 rounded-lg bg-novamedix-blue px-6 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? "Saving..." : label}
+    </button>
   );
 }
 

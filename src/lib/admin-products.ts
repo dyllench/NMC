@@ -6,6 +6,11 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ProductRow } from "@/types/product";
 
 const bucketName = "product-images";
+const categoryValues = ["head-face", "torso", "lower-limb", "gloves", "foot-garments"] as const;
+
+export type ProductFormState = {
+  error?: string;
+};
 
 export async function getAdminProducts() {
   const supabase = getSupabaseAdmin();
@@ -34,42 +39,35 @@ export async function getAdminProductById(id: string) {
   return data as ProductRow;
 }
 
-export async function createProductAction(formData: FormData) {
+export async function createProductAction(_state: ProductFormState, formData: FormData): Promise<ProductFormState> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) redirectWithError("/admin/products/new", "SUPABASE_SERVICE_ROLE_KEY is not configured.");
-
-  let errorMessage = "";
+  if (!supabase) return withFormError("SUPABASE_SERVICE_ROLE_KEY is not configured.");
 
   try {
     const payload = await buildProductPayload(formData);
     const { error } = await supabase.from("products").insert(payload);
-    if (error) errorMessage = error.message;
+    if (error) return withFormError(`Product could not be created: ${error.message}`);
   } catch (error) {
-    errorMessage = getErrorMessage(error);
+    return withFormError(getErrorMessage(error));
   }
-
-  if (errorMessage) redirectWithError("/admin/products/new", errorMessage);
 
   redirect("/admin/products");
 }
 
-export async function updateProductAction(formData: FormData) {
+export async function updateProductAction(_state: ProductFormState, formData: FormData): Promise<ProductFormState> {
   const supabase = getSupabaseAdmin();
   const id = Number(formData.get("id"));
 
-  if (!supabase) redirectWithError(`/admin/products/${id}/edit`, "SUPABASE_SERVICE_ROLE_KEY is not configured.");
-
-  let errorMessage = "";
+  if (!Number.isFinite(id)) return withFormError("Product id is invalid.");
+  if (!supabase) return withFormError("SUPABASE_SERVICE_ROLE_KEY is not configured.");
 
   try {
     const payload = await buildProductPayload(formData);
     const { error } = await supabase.from("products").update(payload).eq("id", id);
-    if (error) errorMessage = error.message;
+    if (error) return withFormError(`Product could not be updated: ${error.message}`);
   } catch (error) {
-    errorMessage = getErrorMessage(error);
+    return withFormError(getErrorMessage(error));
   }
-
-  if (errorMessage) redirectWithError(`/admin/products/${id}/edit`, errorMessage);
 
   redirect("/admin/products");
 }
@@ -86,14 +84,24 @@ export async function deleteProductAction(formData: FormData) {
 }
 
 async function buildProductPayload(formData: FormData) {
+  const title = getString(formData, "title");
+  const slug = getString(formData, "slug");
+  const category = getString(formData, "category");
+
+  if (!title) throw new Error("Title is required.");
+  if (!slug) throw new Error("Slug is required.");
+  if (!categoryValues.includes(category as (typeof categoryValues)[number])) {
+    throw new Error("Category is invalid.");
+  }
+
   const coverImageUrl = await uploadSingleImage(formData.get("cover_image"));
   const galleryUploadUrls = await uploadMultipleImages(formData.getAll("gallery_images"));
   const existingGallery = parseLines(formData.get("gallery_image_urls"));
 
   return {
-    title: getString(formData, "title"),
-    slug: getString(formData, "slug"),
-    category: getString(formData, "category"),
+    title,
+    slug,
+    category,
     subtitle: getString(formData, "subtitle"),
     short_description: getString(formData, "short_description"),
     overview: getString(formData, "overview"),
@@ -106,7 +114,7 @@ async function buildProductPayload(formData: FormData) {
     order_info: parseLines(formData.get("order_info")),
     is_featured: formData.get("is_featured") === "on",
     is_published: formData.get("is_published") === "on",
-    sort_order: Number(formData.get("sort_order") || 0),
+    sort_order: parseInteger(formData.get("sort_order")),
   };
 }
 
@@ -133,14 +141,12 @@ async function uploadImage(file: File) {
 
   const extension = file.name.split(".").pop() || "jpg";
   const path = `products/${Date.now()}-${randomUUID()}.${extension}`;
-  const { error } = await supabase.storage
-    .from(bucketName)
-    .upload(path, file, {
-      contentType: file.type || "image/jpeg",
-      upsert: false,
-    });
+  const { error } = await supabase.storage.from(bucketName).upload(path, file, {
+    contentType: file.type || "image/jpeg",
+    upsert: false,
+  });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
 
   const { data } = supabase.storage.from(bucketName).getPublicUrl(path);
   return data.publicUrl;
@@ -157,6 +163,11 @@ function parseLines(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
+function parseInteger(value: FormDataEntryValue | null) {
+  const parsed = Number(String(value || "").trim());
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function redirectWithError(path: string, message: string): never {
   redirect(`${path}?error=${encodeURIComponent(message)}`);
 }
@@ -164,4 +175,8 @@ function redirectWithError(path: string, message: string): never {
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return "Product could not be saved. Please check the form and try again.";
+}
+
+function withFormError(error: string): ProductFormState {
+  return { error };
 }
