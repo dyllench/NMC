@@ -1,10 +1,9 @@
-"use server";
+import "server-only";
 
 import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
-const adminCookieName = "nmc_admin_session";
+export const adminCookieName = "nmc_admin_session";
 
 export type AdminAuthState = {
   isConfigured: boolean;
@@ -29,29 +28,29 @@ export async function getAdminAuthState(): Promise<AdminAuthState> {
   };
 }
 
-export async function verifyAdminPassword(formData: FormData) {
+export function verifyAdminPasswordValue(submittedPassword: string) {
   const password = process.env.ADMIN_PASSWORD;
-  if (!password) return;
+  if (!password) return false;
 
-  const submittedPassword = String(formData.get("password") || "");
+  return safeEqual(hashPassword(submittedPassword), hashPassword(password));
+}
 
-  if (!safeEqual(hashPassword(submittedPassword), hashPassword(password))) {
-    redirect("/admin/products?error=invalid-password");
-  }
+export function getAdminSessionValue() {
+  const password = process.env.ADMIN_PASSWORD;
+  return password ? hashPassword(password) : "";
+}
 
-  const cookieStore = await cookies();
-  cookieStore.set(adminCookieName, hashPassword(password), {
+export function getAdminCookieOptions() {
+  return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/admin",
     maxAge: 60 * 60 * 8,
-  });
-
-  redirect("/admin/products");
+  };
 }
 
-function hashPassword(value: string) {
+export function hashPassword(value: string) {
   return createHash("sha256").update(`nmc-admin:${value}`).digest("hex");
 }
 

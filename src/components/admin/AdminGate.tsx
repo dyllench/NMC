@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { verifyAdminPassword } from "@/lib/admin-auth";
+import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 
 type AdminGateProps = {
   error?: string;
@@ -26,30 +26,11 @@ export function SupabaseAdminNotConfigured({ message }: { message: string }) {
 }
 
 export function AdminLogin({ error }: AdminGateProps) {
+  const initialError = error === "invalid-password" ? "Invalid password." : "";
+
   return (
     <AdminShell title="Product Admin">
-      <form action={verifyAdminPassword} className="max-w-md rounded-card border border-novamedix-border bg-white p-6 shadow-soft">
-        <h2 className="text-2xl font-bold text-navy">Admin Login</h2>
-        <p className="mt-2 text-sm text-slate-600">Enter the admin password to manage products.</p>
-        {error === "invalid-password" ? (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
-            Invalid password.
-          </p>
-        ) : null}
-        <label className="mt-5 block text-sm font-bold text-navy" htmlFor="password">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          className="mt-2 h-11 w-full rounded-lg border border-novamedix-border px-3 outline-none focus:border-novamedix-blue"
-          required
-        />
-        <button className="mt-5 h-11 rounded-lg bg-novamedix-blue px-5 text-base font-bold text-white" type="submit">
-          Enter Admin
-        </button>
-      </form>
+      <AdminLoginForm initialError={initialError} />
     </AdminShell>
   );
 }
