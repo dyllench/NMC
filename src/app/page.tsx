@@ -5,11 +5,13 @@ import { FactoryImageGrid } from "@/components/FactoryImageGrid";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Icon } from "@/components/Icon";
+import { LocalizedText } from "@/components/LocalizedText";
 import { ProductCategoryCard } from "@/components/ProductCategoryCard";
 import { SectionTitle } from "@/components/SectionTitle";
 import { StickyWhatsAppButton } from "@/components/StickyWhatsAppButton";
 import { StrengthCard } from "@/components/StrengthCard";
 import { buyerStrengths, productCategories } from "@/lib/static-data";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 
 export default function Home() {
   return (
@@ -20,18 +22,20 @@ export default function Home() {
           <div className="mx-auto grid max-w-screen-xl gap-5 px-8 py-10 md:grid-cols-[1fr_1.25fr] md:items-center md:py-0 md:pl-8 md:pr-0">
             <div className="relative z-10">
               <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-navy md:text-6xl">
-                Factory Direct Compression Garments
+                <LocalizedText k="factoryDirectCompressionGarments">Factory Direct Compression Garments</LocalizedText>
               </h1>
               <p className="mt-5 max-w-lg text-xl leading-8 text-slate-600">
-                Ready styles, custom-made service, and OEM support for global buyers,
-                clinics, distributors and wholesalers.
+                <LocalizedText k="homeHeroDescription">
+                  Ready styles, custom-made service, and OEM support for global buyers,
+                  clinics, distributors and wholesalers.
+                </LocalizedText>
               </p>
               <div className="mt-8 grid max-w-sm gap-4">
-                <a href="https://wa.me/8618902221129" className="flex h-12 items-center justify-center gap-3 rounded-lg bg-novamedix-whatsapp-green text-lg font-bold text-white shadow-card">
-                  <Icon name="whatsapp" className="h-6 w-6" /> Get Quote on WhatsApp
+                <a href={getWhatsAppLink()} className="flex h-12 items-center justify-center gap-3 rounded-lg bg-novamedix-whatsapp-green text-lg font-bold text-white shadow-card" target="_blank" rel="noopener noreferrer">
+                  <Icon name="whatsapp" className="h-6 w-6" /> <LocalizedText k="getQuoteOnWhatsApp">Get Quote on WhatsApp</LocalizedText>
                 </a>
                 <Link href="/products" className="flex h-12 items-center justify-center rounded-lg border border-novamedix-blue text-lg font-bold text-novamedix-blue">
-                  View Products
+                  <LocalizedText k="viewProducts">View Products</LocalizedText>
                 </Link>
               </div>
             </div>
@@ -44,21 +48,21 @@ export default function Home() {
         </section>
 
         <section className="mx-auto max-w-screen-xl px-8 py-5">
-          <SectionTitle>Why Buyers Choose Us</SectionTitle>
+          <SectionTitle><LocalizedText k="whyBuyersChooseUs">Why Buyers Choose Us</LocalizedText></SectionTitle>
           <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
             {buyerStrengths.map((item) => <StrengthCard key={item.title} item={item} />)}
           </div>
         </section>
 
         <section className="mx-auto max-w-screen-xl px-8 pb-5">
-          <SectionTitle>Product Categories</SectionTitle>
+          <SectionTitle><LocalizedText k="productCategories">Product Categories</LocalizedText></SectionTitle>
           <div className="mt-4 grid grid-cols-2 gap-4 min-[760px]:grid-cols-5">
             {productCategories.map((category) => <ProductCategoryCard key={category.name} category={category} />)}
           </div>
         </section>
 
         <section className="mx-auto max-w-screen-xl px-8 pb-7">
-          <SectionTitle>Simple Custom Order Support</SectionTitle>
+          <SectionTitle><LocalizedText k="simpleCustomOrderSupport">Simple Custom Order Support</LocalizedText></SectionTitle>
           <div className="mt-4 grid gap-4 md:grid-cols-4">
             {[
               ["1", "clipboard", "Send product type"],
@@ -78,7 +82,7 @@ export default function Home() {
 
         <section className="bg-[#f7faff] py-5">
           <div className="mx-auto max-w-screen-xl px-7">
-            <SectionTitle>Reliable Factory Support</SectionTitle>
+            <SectionTitle><LocalizedText k="reliableFactorySupport">Reliable Factory Support</LocalizedText></SectionTitle>
             <div className="mt-4"><FactoryImageGrid /></div>
           </div>
         </section>

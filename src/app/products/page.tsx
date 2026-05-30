@@ -4,20 +4,24 @@ import { CTASection } from "@/components/CTASection";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Icon } from "@/components/Icon";
+import { LocalizedText } from "@/components/LocalizedText";
 import { StickyWhatsAppButton } from "@/components/StickyWhatsAppButton";
 import { productCategories, productListImages } from "@/lib/static-data";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 
 const tabs = ["Head & Face", "Torso", "Lower Limb", "Gloves", "Foot Garments"];
 
 export default function ProductsPage() {
   return (
     <>
-      <Header title="Products" />
+      <Header titleKey="products" />
       <main className="bg-white px-7 pb-6 pt-8">
         <section className="mx-auto max-w-screen-xl text-center">
-          <h1 className="text-5xl font-bold leading-tight text-navy">Compression Garment Categories</h1>
+          <h1 className="text-5xl font-bold leading-tight text-navy">
+            <LocalizedText k="compressionGarmentCategories">Compression Garment Categories</LocalizedText>
+          </h1>
           <p className="mx-auto mt-4 max-w-xl text-2xl leading-8 text-slate-600">
-            Explore our ready styles and custom-made options for global buyers.
+            <LocalizedText k="productsIntro">Explore our ready styles and custom-made options for global buyers.</LocalizedText>
           </p>
           <div className="mt-7 grid grid-cols-2 gap-4 min-[760px]:grid-cols-5">
             {tabs.map((tab, index) => (
@@ -41,7 +45,7 @@ export default function ProductsPage() {
                 <h2 className="text-3xl font-bold text-navy">{category.name}</h2>
                 <p className="mt-2 max-w-sm text-lg leading-7 text-slate-600">{category.description}</p>
                 <Link href="/products/lower-limb-compression-garment" className="mt-3 inline-flex h-10 items-center gap-3 rounded-lg bg-novamedix-blue px-5 text-lg font-bold text-white shadow-soft">
-                  View Details <Icon name="arrow" className="h-5 w-5" />
+                  <LocalizedText k="viewDetails">View Details</LocalizedText> <Icon name="arrow" className="h-5 w-5" />
                 </Link>
               </div>
               <div className="col-span-2 grid gap-2 px-5 pb-5 md:col-span-1 md:px-0 md:pb-0 md:pr-8">
@@ -61,11 +65,13 @@ export default function ProductsPage() {
             <Icon name="ruler" className="h-12 w-12" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-[#087160]">Need a custom size?</h2>
+            <h2 className="text-3xl font-bold text-[#087160]">
+              <LocalizedText k="needCustomSize">Need a custom size?</LocalizedText>
+            </h2>
             <p className="mt-1 text-lg leading-7 text-slate-700">Send us your product type and basic measurements for quotation.</p>
           </div>
-          <a href="https://wa.me/8618902221129" className="flex h-14 min-w-64 items-center justify-center gap-3 rounded-lg border border-novamedix-whatsapp-green bg-white text-lg font-bold text-[#087d3e]">
-            <Icon name="whatsapp" className="h-7 w-7" /> Ask on WhatsApp
+          <a href={getWhatsAppLink()} className="flex h-14 min-w-64 items-center justify-center gap-3 rounded-lg border border-novamedix-whatsapp-green bg-white text-lg font-bold text-[#087d3e]" target="_blank" rel="noopener noreferrer">
+            <Icon name="whatsapp" className="h-7 w-7" /> <LocalizedText k="askOnWhatsApp">Ask on WhatsApp</LocalizedText>
           </a>
         </section>
 
