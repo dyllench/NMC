@@ -3,6 +3,7 @@ import { getAdminAuthState } from "@/lib/admin-auth";
 import { getMissingSupabaseAdminEnvNames, getSupabaseAdmin } from "@/lib/supabase/admin";
 
 const bucketName = "product-images";
+const adminUploadFixVersion = "admin-upload-fix-2026-05-31-v2";
 
 export async function GET() {
   const auth = await getAdminAuthState();
@@ -11,6 +12,9 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
+        version: adminUploadFixVersion,
+        latestAdminUploadFixVersion: adminUploadFixVersion,
+        environment: process.env.NODE_ENV,
         env: getEnvStatus(),
         message: "Admin password is not configured.",
       },
@@ -22,6 +26,9 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
+        version: adminUploadFixVersion,
+        latestAdminUploadFixVersion: adminUploadFixVersion,
+        environment: process.env.NODE_ENV,
         env: getEnvStatus(),
         message: "Admin login is required.",
       },
@@ -35,6 +42,9 @@ export async function GET() {
   if (!supabase) {
     return NextResponse.json({
       ok: false,
+      version: adminUploadFixVersion,
+      latestAdminUploadFixVersion: adminUploadFixVersion,
+      environment: process.env.NODE_ENV,
       env: getEnvStatus(),
       productsTable: { ok: false, message: "Supabase admin client is not configured." },
       storageBucket: { ok: false, bucket: bucketName, message: "Supabase admin client is not configured." },
@@ -47,6 +57,9 @@ export async function GET() {
 
   return NextResponse.json({
     ok: productsTable.ok && storageBucket.ok,
+    version: adminUploadFixVersion,
+    latestAdminUploadFixVersion: adminUploadFixVersion,
+    environment: process.env.NODE_ENV,
     env: getEnvStatus(),
     productsTable,
     storageBucket,
