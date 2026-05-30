@@ -31,7 +31,22 @@ export default async function EditProductPage({ params, searchParams }: EditProd
 
   return (
     <AdminShell title="Edit Product">
-      <ProductForm action={updateProductAction} product={product} submitLabel="Save Changes" />
+      <ProductForm
+        action={updateProductAction}
+        error={safeDecode(error)}
+        product={product}
+        submitLabel="Save Changes"
+      />
     </AdminShell>
   );
+}
+
+function safeDecode(value?: string) {
+  if (!value) return "";
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

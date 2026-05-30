@@ -24,6 +24,11 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
 
   return (
     <AdminShell title="Products">
+      {error ? (
+        <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          {safeDecode(error)}
+        </div>
+      ) : null}
       <div className="mb-4 flex justify-end">
         <Link href="/admin/products/new" className="rounded-lg bg-novamedix-blue px-5 py-3 text-base font-bold text-white">
           Add New Product
@@ -75,4 +80,14 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
       </div>
     </AdminShell>
   );
+}
+
+function safeDecode(value?: string) {
+  if (!value) return "";
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

@@ -36,37 +36,52 @@ export async function getAdminProductById(id: string) {
 
 export async function createProductAction(formData: FormData) {
   const supabase = getSupabaseAdmin();
-  if (!supabase) throw new Error("Supabase admin client is not configured.");
+  if (!supabase) redirectWithError("/admin/products/new", "SUPABASE_SERVICE_ROLE_KEY is not configured.");
 
-  const payload = await buildProductPayload(formData);
+  let errorMessage = "";
 
-  const { error } = await supabase.from("products").insert(payload);
-  if (error) throw new Error(error.message);
+  try {
+    const payload = await buildProductPayload(formData);
+    const { error } = await supabase.from("products").insert(payload);
+    if (error) errorMessage = error.message;
+  } catch (error) {
+    errorMessage = getErrorMessage(error);
+  }
+
+  if (errorMessage) redirectWithError("/admin/products/new", errorMessage);
 
   redirect("/admin/products");
 }
 
 export async function updateProductAction(formData: FormData) {
   const supabase = getSupabaseAdmin();
-  if (!supabase) throw new Error("Supabase admin client is not configured.");
-
   const id = Number(formData.get("id"));
-  const payload = await buildProductPayload(formData);
 
-  const { error } = await supabase.from("products").update(payload).eq("id", id);
-  if (error) throw new Error(error.message);
+  if (!supabase) redirectWithError(`/admin/products/${id}/edit`, "SUPABASE_SERVICE_ROLE_KEY is not configured.");
+
+  let errorMessage = "";
+
+  try {
+    const payload = await buildProductPayload(formData);
+    const { error } = await supabase.from("products").update(payload).eq("id", id);
+    if (error) errorMessage = error.message;
+  } catch (error) {
+    errorMessage = getErrorMessage(error);
+  }
+
+  if (errorMessage) redirectWithError(`/admin/products/${id}/edit`, errorMessage);
 
   redirect("/admin/products");
 }
 
 export async function deleteProductAction(formData: FormData) {
   const supabase = getSupabaseAdmin();
-  if (!supabase) throw new Error("Supabase admin client is not configured.");
-
   const id = Number(formData.get("id"));
+  if (!supabase) redirectWithError("/admin/products", "SUPABASE_SERVICE_ROLE_KEY is not configured.");
+
   const { error } = await supabase.from("products").delete().eq("id", id);
 
-  if (error) throw new Error(error.message);
+  if (error) redirectWithError("/admin/products", error.message);
   redirect("/admin/products");
 }
 
@@ -140,4 +155,13 @@ function parseLines(value: FormDataEntryValue | null) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function redirectWithError(path: string, message: string): never {
+  redirect(`${path}?error=${encodeURIComponent(message)}`);
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return "Product could not be saved. Please check the form and try again.";
 }

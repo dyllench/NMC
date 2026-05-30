@@ -11,13 +11,26 @@ const categoryOptions = [
 
 type ProductFormProps = {
   action: (formData: FormData) => Promise<void>;
+  error?: string;
+  notice?: string;
   product?: ProductRow | null;
   submitLabel: string;
 };
 
-export function ProductForm({ action, product, submitLabel }: ProductFormProps) {
+export function ProductForm({ action, error, notice, product, submitLabel }: ProductFormProps) {
   return (
     <form action={action} className="grid gap-5 rounded-card bg-white p-5 shadow-soft">
+      {error ? (
+        <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700">
+          {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          {notice}
+        </div>
+      ) : null}
+
       {product ? <input type="hidden" name="id" value={product.id} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2">

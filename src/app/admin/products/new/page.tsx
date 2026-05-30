@@ -1,4 +1,4 @@
-import { AdminLogin, AdminNotConfigured, AdminShell, SupabaseAdminNotConfigured } from "@/components/admin/AdminGate";
+import { AdminLogin, AdminNotConfigured, AdminShell } from "@/components/admin/AdminGate";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createProductAction } from "@/lib/admin-products";
 import { getAdminAuthState } from "@/lib/admin-auth";
@@ -18,11 +18,25 @@ export default async function NewProductPage({ searchParams }: NewProductPagePro
   if (!auth.isAuthenticated) return <AdminLogin error={error} />;
 
   const configError = getSupabaseAdminConfigError();
-  if (configError) return <SupabaseAdminNotConfigured message={configError} />;
 
   return (
     <AdminShell title="New Product">
-      <ProductForm action={createProductAction} submitLabel="Save Product" />
+      <ProductForm
+        action={createProductAction}
+        error={safeDecode(error)}
+        notice={configError ? `${configError} You can still prepare the product form, but saving requires the server-side Supabase service key.` : ""}
+        submitLabel="Save Product"
+      />
     </AdminShell>
   );
+}
+
+function safeDecode(value?: string) {
+  if (!value) return "";
+
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
