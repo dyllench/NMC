@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getMissingSupabaseAdminEnvNames, getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ProductRow } from "@/types/product";
 
 const bucketName = "product-images";
@@ -41,14 +41,44 @@ export async function getAdminProductById(id: string) {
 
 export async function createProductAction(_state: ProductFormState, formData: FormData): Promise<ProductFormState> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return withFormError("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  const missingEnvNames = getMissingSupabaseAdminEnvNames();
+  if (!supabase) {
+    logAdminProductEvent("product_create_missing_env", { missingEnvNames });
+    return withFormError(`Product save failed: ${missingEnvNames.join(", ")} is not configured.`);
+  }
 
   try {
     const payload = await buildProductPayload(formData);
+    logAdminProductEvent("product_create_insert_start", {
+      payloadFieldNames: Object.keys(payload),
+      slug: payload.slug,
+      category: payload.category,
+    });
+
     const { error } = await supabase.from("products").insert(payload);
-    if (error) return withFormError(`Product could not be created: ${error.message}`);
+    if (error) {
+      logAdminProductEvent("product_create_insert_error", {
+        supabaseError: toSupabaseErrorLog(error),
+        payloadFieldNames: Object.keys(payload),
+        slug: payload.slug,
+        category: payload.category,
+      });
+
+      return withFormError(`Product save failed: ${formatSupabaseError(error)}`);
+    }
+
+    logAdminProductEvent("product_create_insert_success", {
+      payloadFieldNames: Object.keys(payload),
+      slug: payload.slug,
+      category: payload.category,
+    });
   } catch (error) {
-    return withFormError(getErrorMessage(error));
+    logAdminProductEvent("product_create_unexpected_error", {
+      error: toUnknownErrorLog(error),
+      fieldNames: getFormFieldNames(formData),
+    });
+
+    return withFormError(`Product save failed: ${getErrorMessage(error)}`);
   }
 
   redirect("/admin/products");
@@ -59,14 +89,32 @@ export async function updateProductAction(_state: ProductFormState, formData: Fo
   const id = Number(formData.get("id"));
 
   if (!Number.isFinite(id)) return withFormError("Product id is invalid.");
-  if (!supabase) return withFormError("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  if (!supabase) {
+    const missingEnvNames = getMissingSupabaseAdminEnvNames();
+    logAdminProductEvent("product_update_missing_env", { missingEnvNames, productId: id });
+    return withFormError(`Product save failed: ${missingEnvNames.join(", ")} is not configured.`);
+  }
 
   try {
     const payload = await buildProductPayload(formData);
     const { error } = await supabase.from("products").update(payload).eq("id", id);
-    if (error) return withFormError(`Product could not be updated: ${error.message}`);
+    if (error) {
+      logAdminProductEvent("product_update_error", {
+        productId: id,
+        supabaseError: toSupabaseErrorLog(error),
+        payloadFieldNames: Object.keys(payload),
+      });
+
+      return withFormError(`Product save failed: ${formatSupabaseError(error)}`);
+    }
   } catch (error) {
-    return withFormError(getErrorMessage(error));
+    logAdminProductEvent("product_update_unexpected_error", {
+      productId: id,
+      error: toUnknownErrorLog(error),
+      fieldNames: getFormFieldNames(formData),
+    });
+
+    return withFormError(`Product save failed: ${getErrorMessage(error)}`);
   }
 
   redirect("/admin/products");
@@ -139,16 +187,52 @@ async function uploadImage(file: File) {
   const supabase = getSupabaseAdmin();
   if (!supabase) throw new Error("Supabase admin client is not configured.");
 
-  const extension = file.name.split(".").pop() || "jpg";
+  const extension = getSafeExtension(file.name);
   const path = `products/${Date.now()}-${randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from(bucketName).upload(path, file, {
-    contentType: file.type || "image/jpeg",
+  const contentType = file.type || "image/jpeg";
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+  logAdminProductEvent("product_image_upload_start", {
+    bucket: bucketName,
+    path,
+    file: {
+      name: file.name,
+      size: file.size,
+      type: contentType,
+    },
+  });
+
+  const { error } = await supabase.storage.from(bucketName).upload(path, fileBuffer, {
+    contentType,
     upsert: false,
   });
 
-  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  if (error) {
+    logAdminProductEvent("product_image_upload_error", {
+      bucket: bucketName,
+      path,
+      file: {
+        name: file.name,
+        size: file.size,
+        type: contentType,
+      },
+      supabaseError: toSupabaseErrorLog(error),
+    });
+
+    throw new Error(`Image upload failed: ${formatSupabaseError(error)}`);
+  }
 
   const { data } = supabase.storage.from(bucketName).getPublicUrl(path);
+  logAdminProductEvent("product_image_upload_success", {
+    bucket: bucketName,
+    path,
+    file: {
+      name: file.name,
+      size: file.size,
+      type: contentType,
+    },
+  });
+
   return data.publicUrl;
 }
 
@@ -179,4 +263,58 @@ function getErrorMessage(error: unknown) {
 
 function withFormError(error: string): ProductFormState {
   return { error };
+}
+
+function getSafeExtension(fileName: string) {
+  const extension = fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return extension || "jpg";
+}
+
+function getFormFieldNames(formData: FormData) {
+  return Array.from(new Set(Array.from(formData.keys()).filter((key) => !key.startsWith("$ACTION"))));
+}
+
+function formatSupabaseError(error: unknown) {
+  const maybeError = error as { code?: string; message?: string };
+  const message = maybeError.message || "Unknown Supabase error.";
+  return maybeError.code ? `${message} (${maybeError.code})` : message;
+}
+
+function toSupabaseErrorLog(error: unknown) {
+  const maybeError = error as { code?: string; message?: string; name?: string; statusCode?: string | number };
+
+  return {
+    code: maybeError.code || maybeError.statusCode || null,
+    message: maybeError.message || "Unknown Supabase error.",
+    name: maybeError.name || null,
+  };
+}
+
+function toUnknownErrorLog(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return {
+    name: null,
+    message: "Unknown error.",
+  };
+}
+
+function logAdminProductEvent(operation: string, details: Record<string, unknown>) {
+  const payload = JSON.stringify({
+    scope: "admin_products",
+    operation,
+    ...details,
+  });
+
+  if (operation.includes("_error") || operation.includes("_missing_env")) {
+    console.error(payload);
+    return;
+  }
+
+  console.info(payload);
 }
