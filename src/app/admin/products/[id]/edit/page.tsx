@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminLogin, AdminNotConfigured, AdminShell, SupabaseAdminNotConfigured } from "@/components/admin/AdminGate";
 import { ProductForm } from "@/components/admin/ProductForm";
-import { getAdminProductById, updateProductAction } from "@/lib/admin-products";
+import { getAdminProductById } from "@/lib/admin-products";
 import { getAdminAuthState } from "@/lib/admin-auth";
 import { getSupabaseAdminConfigError } from "@/lib/supabase/admin";
 
@@ -32,8 +32,8 @@ export default async function EditProductPage({ params, searchParams }: EditProd
   return (
     <AdminShell title="Edit Product">
       <ProductForm
-        action={updateProductAction}
         error={safeDecode(error)}
+        mode="update"
         product={product}
         submitLabel="Save Changes"
       />

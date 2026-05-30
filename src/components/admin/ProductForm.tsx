@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 import type { ProductRow } from "@/types/product";
-import type { ProductFormState } from "@/lib/admin-products";
 
 const categoryOptions = [
   ["head-face", "Head & Face"],
@@ -15,19 +14,46 @@ const categoryOptions = [
 ];
 
 type ProductFormProps = {
-  action: (state: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   error?: string;
+  mode: "create" | "update";
   notice?: string;
   product?: ProductRow | null;
   submitLabel: string;
 };
 
-export function ProductForm({ action, error, notice, product, submitLabel }: ProductFormProps) {
-  const [state, formAction] = useActionState(action, { error: error || "" });
-  const formError = state.error || error;
+export function ProductForm({ error, mode, notice, product, submitLabel }: ProductFormProps) {
+  const router = useRouter();
+  const [formError, setFormError] = useState(error || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError("");
+    setIsSaving(true);
+
+    try {
+      const response = await fetch("/api/admin/products", {
+        method: mode === "create" ? "POST" : "PUT",
+        body: new FormData(event.currentTarget),
+      });
+      const result = (await response.json().catch(() => ({}))) as { message?: string };
+
+      if (!response.ok) {
+        setFormError(result.message || "Product save failed. Please try again.");
+        return;
+      }
+
+      router.push("/admin/products");
+      router.refresh();
+    } catch (error) {
+      setFormError(error instanceof Error ? `Product save failed: ${error.message}` : "Product save failed. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   return (
-    <form action={formAction} className="grid gap-5 rounded-card bg-white p-5 shadow-soft">
+    <form onSubmit={handleSubmit} className="grid gap-5 rounded-card bg-white p-5 shadow-soft">
       {formError ? (
         <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700">
           {formError}
@@ -80,7 +106,7 @@ export function ProductForm({ action, error, notice, product, submitLabel }: Pro
       </div>
 
       <div className="flex flex-wrap gap-3 border-t border-novamedix-border pt-5">
-        <SubmitButton label={submitLabel} />
+        <SubmitButton isSaving={isSaving} label={submitLabel} />
         <Link href="/admin/products" className="flex h-11 items-center rounded-lg border border-novamedix-border px-6 text-base font-bold text-navy">
           Cancel
         </Link>
@@ -89,16 +115,14 @@ export function ProductForm({ action, error, notice, product, submitLabel }: Pro
   );
 }
 
-function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus();
-
+function SubmitButton({ isSaving, label }: { isSaving: boolean; label: string }) {
   return (
     <button
       className="h-11 rounded-lg bg-novamedix-blue px-6 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
-      disabled={pending}
+      disabled={isSaving}
       type="submit"
     >
-      {pending ? "Saving..." : label}
+      {isSaving ? "Saving..." : label}
     </button>
   );
 }

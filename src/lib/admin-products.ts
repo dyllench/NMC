@@ -12,6 +12,10 @@ export type ProductFormState = {
   error?: string;
 };
 
+export type ProductMutationResult = {
+  error?: string;
+};
+
 export async function getAdminProducts() {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
@@ -40,11 +44,18 @@ export async function getAdminProductById(id: string) {
 }
 
 export async function createProductAction(_state: ProductFormState, formData: FormData): Promise<ProductFormState> {
+  const result = await createProductFromFormData(formData);
+  if (result.error) return withFormError(result.error);
+
+  redirect("/admin/products");
+}
+
+export async function createProductFromFormData(formData: FormData): Promise<ProductMutationResult> {
   const supabase = getSupabaseAdmin();
   const missingEnvNames = getMissingSupabaseAdminEnvNames();
   if (!supabase) {
     logAdminProductEvent("product_create_missing_env", { missingEnvNames });
-    return withFormError(`Product save failed: ${missingEnvNames.join(", ")} is not configured.`);
+    return { error: `Product save failed: ${missingEnvNames.join(", ")} is not configured.` };
   }
 
   try {
@@ -64,7 +75,7 @@ export async function createProductAction(_state: ProductFormState, formData: Fo
         category: payload.category,
       });
 
-      return withFormError(`Product save failed: ${formatSupabaseError(error)}`);
+      return { error: `Product save failed: ${formatSupabaseError(error)}` };
     }
 
     logAdminProductEvent("product_create_insert_success", {
@@ -78,21 +89,28 @@ export async function createProductAction(_state: ProductFormState, formData: Fo
       fieldNames: getFormFieldNames(formData),
     });
 
-    return withFormError(`Product save failed: ${getErrorMessage(error)}`);
+    return { error: `Product save failed: ${getErrorMessage(error)}` };
   }
+
+  return {};
+}
+
+export async function updateProductAction(_state: ProductFormState, formData: FormData): Promise<ProductFormState> {
+  const result = await updateProductFromFormData(formData);
+  if (result.error) return withFormError(result.error);
 
   redirect("/admin/products");
 }
 
-export async function updateProductAction(_state: ProductFormState, formData: FormData): Promise<ProductFormState> {
+export async function updateProductFromFormData(formData: FormData): Promise<ProductMutationResult> {
   const supabase = getSupabaseAdmin();
   const id = Number(formData.get("id"));
 
-  if (!Number.isFinite(id)) return withFormError("Product id is invalid.");
+  if (!Number.isFinite(id)) return { error: "Product id is invalid." };
   if (!supabase) {
     const missingEnvNames = getMissingSupabaseAdminEnvNames();
     logAdminProductEvent("product_update_missing_env", { missingEnvNames, productId: id });
-    return withFormError(`Product save failed: ${missingEnvNames.join(", ")} is not configured.`);
+    return { error: `Product save failed: ${missingEnvNames.join(", ")} is not configured.` };
   }
 
   try {
@@ -105,7 +123,7 @@ export async function updateProductAction(_state: ProductFormState, formData: Fo
         payloadFieldNames: Object.keys(payload),
       });
 
-      return withFormError(`Product save failed: ${formatSupabaseError(error)}`);
+      return { error: `Product save failed: ${formatSupabaseError(error)}` };
     }
   } catch (error) {
     logAdminProductEvent("product_update_unexpected_error", {
@@ -114,10 +132,10 @@ export async function updateProductAction(_state: ProductFormState, formData: Fo
       fieldNames: getFormFieldNames(formData),
     });
 
-    return withFormError(`Product save failed: ${getErrorMessage(error)}`);
+    return { error: `Product save failed: ${getErrorMessage(error)}` };
   }
 
-  redirect("/admin/products");
+  return {};
 }
 
 export async function deleteProductAction(formData: FormData) {
