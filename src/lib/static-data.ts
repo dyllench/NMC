@@ -3,31 +3,31 @@ import type { FactoryImage, FeatureItem, ProductCategory } from "@/types";
 export const productCategories: ProductCategory[] = [
   {
     name: "Head & Face",
-    href: "/products/lower-limb-compression-garment",
+    href: "/products?category=head-face",
     description: "Compression garments for face, chin, neck and head support.",
     image: "/placeholder/cat-head-face.png",
   },
   {
     name: "Torso",
-    href: "/products/lower-limb-compression-garment",
+    href: "/products?category=torso",
     description: "Compression garments for chest, abdomen, waist and upper body support.",
     image: "/placeholder/cat-torso.png",
   },
   {
     name: "Lower Limb",
-    href: "/products/lower-limb-compression-garment",
+    href: "/products?category=lower-limb",
     description: "Compression garments for thigh, leg and full lower-limb support.",
     image: "/placeholder/cat-lower-limb.png",
   },
   {
     name: "Gloves",
-    href: "/products/lower-limb-compression-garment",
+    href: "/products?category=gloves",
     description: "Compression gloves for hand and finger coverage.",
     image: "/placeholder/cat-gloves.png",
   },
   {
     name: "Foot Garments",
-    href: "/products/lower-limb-compression-garment",
+    href: "/products?category=foot-garments",
     description: "Compression garments for foot and ankle support.",
     image: "/placeholder/cat-foot.png",
   },

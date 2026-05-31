@@ -2,25 +2,29 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { Icon } from "@/components/Icon";
 import { LocalizedText } from "@/components/LocalizedText";
+import { isProductCategoryValue, productCategoryOptions } from "@/lib/product-categories";
 import type { Product } from "@/types/product";
 
-const categories = [
-  { value: "head-face", label: "Head & Face" },
-  { value: "torso", label: "Torso" },
-  { value: "lower-limb", label: "Lower Limb" },
-  { value: "gloves", label: "Gloves" },
-  { value: "foot-garments", label: "Foot Garments" },
-];
-
 export function ProductCategoryTabs({ products }: { products: Product[] }) {
-  const initialCategory = useMemo(() => {
-    return categories.find((category) => products.some((product) => product.category === category.value))?.value || "head-face";
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category") || "";
+  const defaultCategory = useMemo(() => {
+    return productCategoryOptions.find((category) => products.some((product) => product.category === category.value))?.value || "head-face";
   }, [products]);
-  const [activeCategory, setActiveCategory] = useState(initialCategory);
+  const activeCategory = isProductCategoryValue(categoryParam) ? categoryParam : defaultCategory;
   const visibleProducts = products.filter((product) => product.category === activeCategory);
+
+  function handleCategoryClick(category: string) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("category", category);
+    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
+  }
 
   return (
     <>
@@ -32,11 +36,11 @@ export function ProductCategoryTabs({ products }: { products: Product[] }) {
           <LocalizedText k="productsIntro">Explore our ready styles and custom-made options for global buyers.</LocalizedText>
         </p>
         <div className="mt-7 grid grid-cols-2 gap-4 min-[760px]:grid-cols-5">
-          {categories.map((category) => (
+          {productCategoryOptions.map((category) => (
             <button
               key={category.value}
               type="button"
-              onClick={() => setActiveCategory(category.value)}
+              onClick={() => handleCategoryClick(category.value)}
               className={`h-14 rounded-lg border text-xl font-semibold ${activeCategory === category.value ? "border-novamedix-blue bg-novamedix-blue text-white shadow-soft" : "border-novamedix-border bg-white text-slate-700"}`}
             >
               {category.label}

@@ -2,11 +2,11 @@
 
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
+import { isProductCategoryValue } from "@/lib/product-categories";
 import { getMissingSupabaseAdminEnvNames, getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ProductRow } from "@/types/product";
 
 const bucketName = "product-images";
-const categoryValues = ["head-face", "torso", "lower-limb", "gloves", "foot-garments"] as const;
 
 export type ProductFormState = {
   error?: string;
@@ -179,7 +179,7 @@ async function buildProductPayload(formData: FormData) {
 
   if (!title) throw new Error("Title is required.");
   if (!slug) throw new Error("Slug is required.");
-  if (!categoryValues.includes(category as (typeof categoryValues)[number])) {
+  if (!isProductCategoryValue(category)) {
     throw new Error("Category is invalid.");
   }
 

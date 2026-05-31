@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { isProductCategoryValue, productCategoryOptions, type ProductCategoryValue } from "@/lib/product-categories";
 import type { ProductRow } from "@/types/product";
-
-const categoryOptions = [
-  ["head-face", "Head & Face"],
-  ["torso", "Torso"],
-  ["lower-limb", "Lower Limb"],
-  ["gloves", "Gloves"],
-  ["foot-garments", "Foot Garments"],
-] as const;
-
-const categoryValues = categoryOptions.map(([value]) => value);
 
 type ProductFormProps = {
   error?: string;
@@ -196,7 +187,7 @@ function SelectField({
   label: string;
   name: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: ProductCategoryValue) => void;
 }) {
   return (
     <label className="block">
@@ -205,12 +196,14 @@ function SelectField({
         name={name}
         value={value}
         required
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          if (isProductCategoryValue(event.target.value)) onChange(event.target.value);
+        }}
         className="mt-2 h-11 w-full rounded-lg border border-novamedix-border bg-white px-3 outline-none focus:border-novamedix-blue"
       >
-        {categoryOptions.map(([value, labelText]) => (
-          <option key={value} value={value}>
-            {labelText}
+        {productCategoryOptions.map((category) => (
+          <option key={category.value} value={category.value}>
+            {category.label}
           </option>
         ))}
       </select>
@@ -263,5 +256,5 @@ function lines(value?: string[] | null) {
 }
 
 function getInitialCategory(category?: string | null) {
-  return category && categoryValues.includes(category as (typeof categoryValues)[number]) ? category : "lower-limb";
+  return category && isProductCategoryValue(category) ? category : "lower-limb";
 }
