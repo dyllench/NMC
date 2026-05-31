@@ -11,6 +11,8 @@ import { getWhatsAppLink } from "@/lib/whatsapp";
 
 const tabs = ["Head & Face", "Torso", "Lower Limb", "Gloves", "Foot Garments"];
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductsPage() {
   const products = await getPublishedProducts();
 

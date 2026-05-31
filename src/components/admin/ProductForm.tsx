@@ -11,7 +11,9 @@ const categoryOptions = [
   ["lower-limb", "Lower Limb"],
   ["gloves", "Gloves"],
   ["foot-garments", "Foot Garments"],
-];
+] as const;
+
+const categoryValues = categoryOptions.map(([value]) => value);
 
 type ProductFormProps = {
   error?: string;
@@ -25,6 +27,7 @@ export function ProductForm({ error, mode, notice, product, submitLabel }: Produ
   const router = useRouter();
   const [formError, setFormError] = useState(error || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [category, setCategory] = useState(getInitialCategory(product?.category));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,9 +35,12 @@ export function ProductForm({ error, mode, notice, product, submitLabel }: Produ
     setIsSaving(true);
 
     try {
+      const formData = new FormData(event.currentTarget);
+      formData.set("category", category);
+
       const response = await fetch("/api/admin/products", {
         method: mode === "create" ? "POST" : "PUT",
-        body: new FormData(event.currentTarget),
+        body: formData,
       });
       const result = (await response.json().catch(() => ({}))) as { message?: string };
 
@@ -70,7 +76,7 @@ export function ProductForm({ error, mode, notice, product, submitLabel }: Produ
       <div className="grid gap-4 md:grid-cols-2">
         <TextField label="Title" name="title" defaultValue={product?.title} required />
         <TextField label="Slug" name="slug" defaultValue={product?.slug} required />
-        <SelectField label="Category" name="category" defaultValue={product?.category || "lower-limb"} />
+        <SelectField label="Category" name="category" value={category} onChange={setCategory} />
         <TextField label="Sort Order" name="sort_order" type="number" defaultValue={product?.sort_order ?? 0} />
       </div>
 
@@ -184,18 +190,22 @@ function TextArea({
 function SelectField({
   label,
   name,
-  defaultValue,
+  value,
+  onChange,
 }: {
   label: string;
   name: string;
-  defaultValue: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-navy">{label}</span>
       <select
         name={name}
-        defaultValue={defaultValue}
+        value={value}
+        required
+        onChange={(event) => onChange(event.target.value)}
         className="mt-2 h-11 w-full rounded-lg border border-novamedix-border bg-white px-3 outline-none focus:border-novamedix-blue"
       >
         {categoryOptions.map(([value, labelText]) => (
@@ -250,4 +260,8 @@ function CheckboxField({
 
 function lines(value?: string[] | null) {
   return value?.join("\n") || "";
+}
+
+function getInitialCategory(category?: string | null) {
+  return category && categoryValues.includes(category as (typeof categoryValues)[number]) ? category : "lower-limb";
 }

@@ -66,7 +66,12 @@ export async function createProductFromFormData(formData: FormData): Promise<Pro
       category: payload.category,
     });
 
-    const { error } = await supabase.from("products").insert(payload);
+    const { data, error } = await supabase
+      .from("products")
+      .insert(payload)
+      .select("id, category, cover_image_url, gallery_image_urls")
+      .single();
+
     if (error) {
       logAdminProductEvent("product_create_insert_error", {
         supabaseError: toSupabaseErrorLog(error),
@@ -79,6 +84,10 @@ export async function createProductFromFormData(formData: FormData): Promise<Pro
     }
 
     logAdminProductEvent("product_create_insert_success", {
+      savedProductId: data?.id,
+      savedCategory: data?.category,
+      savedCoverImageUrlExists: Boolean(data?.cover_image_url),
+      savedGalleryImageCount: data?.gallery_image_urls?.length || 0,
       payloadFieldNames: Object.keys(payload),
       slug: payload.slug,
       category: payload.category,
@@ -115,7 +124,13 @@ export async function updateProductFromFormData(formData: FormData): Promise<Pro
 
   try {
     const payload = await buildProductPayload(formData);
-    const { error } = await supabase.from("products").update(payload).eq("id", id);
+    const { data, error } = await supabase
+      .from("products")
+      .update(payload)
+      .eq("id", id)
+      .select("id, category, cover_image_url, gallery_image_urls")
+      .single();
+
     if (error) {
       logAdminProductEvent("product_update_error", {
         productId: id,
@@ -125,6 +140,14 @@ export async function updateProductFromFormData(formData: FormData): Promise<Pro
 
       return { error: `Product save failed: ${formatSupabaseError(error)}` };
     }
+
+    logAdminProductEvent("product_update_success", {
+      savedProductId: data?.id,
+      savedCategory: data?.category,
+      savedCoverImageUrlExists: Boolean(data?.cover_image_url),
+      savedGalleryImageCount: data?.gallery_image_urls?.length || 0,
+      payloadFieldNames: Object.keys(payload),
+    });
   } catch (error) {
     logAdminProductEvent("product_update_unexpected_error", {
       productId: id,

@@ -36,4 +36,6 @@ export type ProductRow = {
   is_featured: boolean | null;
   is_published: boolean | null;
   sort_order: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };

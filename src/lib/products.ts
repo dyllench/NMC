@@ -51,6 +51,9 @@ const galleryByCategory: Record<string, string[]> = {
   "foot-garments": ["/placeholder/product-foot.png", "/placeholder/cat-foot.png"],
 };
 
+const productSelectFields =
+  "id, slug, category, title, subtitle, short_description, overview, cover_image_url, gallery_image_urls, tags, features, applications, custom_steps, order_info, is_featured, is_published, sort_order, created_at, updated_at";
+
 const fallbackProducts: Product[] = [
   {
     id: "fallback-head-face",
@@ -171,12 +174,18 @@ export async function getProductsByCategory(category: string) {
 }
 
 export async function getProductBySlug(slug: string) {
-  const products = await getPublishedProducts();
-  return (
-    products.find((product) => product.slug === slug) ||
-    fallbackProducts.find((product) => product.slug === slug) ||
-    fallbackProducts[0]
-  );
+  if (!supabase) return getFallbackProductBySlug(slug);
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(productSelectFields)
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error || !data) return getFallbackProductBySlug(slug);
+
+  return mapProductRow(data as ProductRow);
 }
 
 function getPlaceholderForCategory(category: string) {
@@ -192,11 +201,10 @@ async function fetchProducts() {
 
   const { data, error } = await supabase
     .from("products")
-    .select(
-      "id, slug, category, title, subtitle, short_description, overview, cover_image_url, gallery_image_urls, tags, features, applications, custom_steps, order_info, is_featured, is_published, sort_order",
-    )
+    .select(productSelectFields)
     .eq("is_published", true)
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
 
   if (error || !data || data.length === 0) return fallbackProducts;
 
@@ -204,11 +212,9 @@ async function fetchProducts() {
 }
 
 function mapProductRow(row: ProductRow): Product {
-  const coverImageUrl = row.cover_image_url || getPlaceholderForCategory(row.category);
-  const galleryImageUrls =
-    row.gallery_image_urls && row.gallery_image_urls.length > 0
-      ? row.gallery_image_urls
-      : getGalleryForCategory(row.category);
+  const coverImageUrl = getImageUrl(row.cover_image_url, getPlaceholderForCategory(row.category));
+  const galleryUrls = nonEmptyArray(row.gallery_image_urls, []);
+  const galleryImageUrls = galleryUrls.length > 0 ? galleryUrls : getGalleryForCategory(row.category);
 
   return {
     id: row.id,
@@ -234,5 +240,15 @@ function mapProductRow(row: ProductRow): Product {
 }
 
 function nonEmptyArray(value: string[] | null, fallback: string[]) {
-  return value && value.length > 0 ? value : fallback;
+  const cleaned = value?.map((item) => item.trim()).filter(Boolean) || [];
+  return cleaned.length > 0 ? cleaned : fallback;
+}
+
+function getImageUrl(value: string | null, fallback: string) {
+  const cleaned = value?.trim();
+  return cleaned || fallback;
+}
+
+function getFallbackProductBySlug(slug: string) {
+  return fallbackProducts.find((product) => product.slug === slug) || fallbackProducts[0];
 }
