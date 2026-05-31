@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase/client";
+import { productCategories } from "@/lib/static-data";
+import type { ProductCategory } from "@/types";
 import type { Product, ProductRow } from "@/types/product";
 
 const defaultFeatures = [
@@ -173,6 +175,33 @@ export async function getProductsByCategory(category: string) {
   return products.filter((product) => product.category === category);
 }
 
+export async function getHomepageProductCategories(): Promise<ProductCategory[]> {
+  if (!supabase) return productCategories;
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("category, cover_image_url, sort_order, created_at")
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !data) return productCategories;
+
+  const imageByCategory = new Map<string, string>();
+  for (const row of data as Pick<ProductRow, "category" | "cover_image_url">[]) {
+    const coverImageUrl = row.cover_image_url?.trim();
+    if (coverImageUrl && !imageByCategory.has(row.category)) {
+      imageByCategory.set(row.category, coverImageUrl);
+    }
+  }
+
+  return productCategories.map((category) => {
+    const categoryValue = getCategoryValueFromHref(category.href);
+    const image = categoryValue ? imageByCategory.get(categoryValue) : undefined;
+    return image ? { ...category, image } : category;
+  });
+}
+
 export async function getProductBySlug(slug: string) {
   if (!supabase) return getFallbackProductBySlug(slug);
 
@@ -251,4 +280,9 @@ function getImageUrl(value: string | null, fallback: string) {
 
 function getFallbackProductBySlug(slug: string) {
   return fallbackProducts.find((product) => product.slug === slug) || fallbackProducts[0];
+}
+
+function getCategoryValueFromHref(href: string) {
+  const category = href.split("category=")[1]?.split("&")[0];
+  return category ? decodeURIComponent(category) : "";
 }

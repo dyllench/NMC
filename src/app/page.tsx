@@ -10,10 +10,15 @@ import { ProductCategoryCard } from "@/components/ProductCategoryCard";
 import { SectionTitle } from "@/components/SectionTitle";
 import { StickyWhatsAppButton } from "@/components/StickyWhatsAppButton";
 import { StrengthCard } from "@/components/StrengthCard";
-import { buyerStrengths, productCategories } from "@/lib/static-data";
+import { getHomepageProductCategories } from "@/lib/products";
+import { buyerStrengths } from "@/lib/static-data";
 import { getWhatsAppLink } from "@/lib/whatsapp";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const homepageProductCategories = await getHomepageProductCategories();
+
   return (
     <>
       <Header />
@@ -57,7 +62,7 @@ export default function Home() {
         <section className="mx-auto max-w-screen-xl px-8 pb-5">
           <SectionTitle><LocalizedText k="productCategories">Product Categories</LocalizedText></SectionTitle>
           <div className="mt-4 grid grid-cols-2 gap-4 min-[760px]:grid-cols-5">
-            {productCategories.map((category) => <ProductCategoryCard key={category.name} category={category} />)}
+            {homepageProductCategories.map((category) => <ProductCategoryCard key={category.name} category={category} />)}
           </div>
         </section>
 
