@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
 import { Icon } from "@/components/Icon";
 import { LocalizedText } from "@/components/LocalizedText";
 import { isProductCategoryValue, productCategoryOptions } from "@/lib/product-categories";
@@ -14,10 +13,7 @@ export function ProductCategoryTabs({ products }: { products: Product[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category") || "";
-  const defaultCategory = useMemo(() => {
-    return productCategoryOptions.find((category) => products.some((product) => product.category === category.value))?.value || "head-face";
-  }, [products]);
-  const activeCategory = isProductCategoryValue(categoryParam) ? categoryParam : defaultCategory;
+  const activeCategory = isProductCategoryValue(categoryParam) ? categoryParam : "head-face";
   const visibleProducts = products.filter((product) => product.category === activeCategory);
 
   function handleCategoryClick(category: string) {
